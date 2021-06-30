@@ -1,0 +1,355 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "ask_sign",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "name": "ask_sign",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_sign",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -20,
+          "y": 190
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Hi there, tell us your sign and get a special Pride horoscope 🔮",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_sign",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "send_and_reply_no_match",
+          "event": "noMatch"
+        },
+        {
+          "next": "send_waiting",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of aries,taurus,gemini,cancer,leo,virgo,libra,scorpio,sagittarius,sag,capricorn,aquarius,pisces",
+              "arguments": [
+                "{{widgets.ask_sign.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "aries,taurus,gemini,cancer,leo,virgo,libra,scorpio,sagittarius,sag,capricorn,aquarius,pisces"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.ask_sign.inbound.Body}}",
+        "offset": {
+          "x": -20,
+          "y": 450
+        }
+      }
+    },
+    {
+      "name": "send_waiting",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "get_horoscope",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 300,
+          "y": 720
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Oh you're a {{widgets.ask_sign.inbound.Body}}? Please hold while we consult the stars ✨"
+      }
+    },
+    {
+      "name": "get_horoscope",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "get_compatibility",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZScbca293eac19bdd6de97e6f8b43c850c",
+        "environment_sid": "ZE8e162811712f1dc63c069835abd74602",
+        "offset": {
+          "x": 320,
+          "y": 970
+        },
+        "function_sid": "ZH36cc8b50d60d35b7cb7b2138f2e2fdea",
+        "parameters": [
+          {
+            "value": "{{widgets.ask_sign.inbound.Body}}",
+            "key": "sign"
+          }
+        ],
+        "url": ""
+      }
+    },
+    {
+      "name": "get_compatibility",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "send_horoscope_and_compatibility",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZScbca293eac19bdd6de97e6f8b43c850c",
+        "environment_sid": "ZE8e162811712f1dc63c069835abd74602",
+        "offset": {
+          "x": 330,
+          "y": 1170
+        },
+        "function_sid": "ZHfb25da2e4d02c35fb51d39db63318382",
+        "parameters": [
+          {
+            "value": "{{widgets.ask_sign.inbound.Body}}",
+            "key": "sign"
+          }
+        ],
+        "url": ""
+      }
+    },
+    {
+      "name": "send_horoscope_and_compatibility",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "send_ask_to_see_match",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 330,
+          "y": 1480
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "📅  Today's horoscope 📅  \n{{widgets.get_horoscope.parsed.description}}\n💭 Today's mood 💭   {{widgets.get_horoscope.parsed.mood}}\n💗 Your compatibility 💗  {{widgets.get_compatibility.parsed.list}}"
+      }
+    },
+    {
+      "name": "send_ask_to_see_match",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_see_match",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 360,
+          "y": 1740
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Would you like to see who your celebrity match is and what lesbian bar you should go to?",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_see_match",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "get_celebrity_match",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains yes",
+              "arguments": [
+                "{{widgets.send_ask_to_see_match.inbound.Body}}"
+              ],
+              "type": "contains",
+              "value": "yes"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.send_ask_to_see_match.inbound.Body}}",
+        "offset": {
+          "x": 380,
+          "y": 2010
+        }
+      }
+    },
+    {
+      "name": "get_celebrity_match",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "send_match",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZScbca293eac19bdd6de97e6f8b43c850c",
+        "environment_sid": "ZE8e162811712f1dc63c069835abd74602",
+        "offset": {
+          "x": 420,
+          "y": 2290
+        },
+        "function_sid": "ZH8031087fc3e3415494d7d6939ad76239",
+        "parameters": [
+          {
+            "value": "{{widgets.get_compatibility.parsed.list}}",
+            "key": "compatibility_list"
+          }
+        ],
+        "url": ""
+      }
+    },
+    {
+      "name": "send_match",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "send_lbp_info",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 440,
+          "y": 2560
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Oh la la your match is {{widgets.get_celebrity_match.parsed.name}}! {{widgets.get_celebrity_match.parsed.description}}"
+      }
+    },
+    {
+      "name": "send_and_reply_no_match",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_sign",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -310,
+          "y": 720
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "If you need help with your sign, see the dates below:\nAries - March 21-April 19\nTaurus - April 20-May 20\nGemini - May 21-June 21\nCancer - June 22-July 22\nLeo - July 23-August 22\nVirgo - August 23-Sept 22\nLibra - Sept 23-Oct 23\nScorpio - Oct 24-Nov 22\nSagittarius - Nov 23-Dec 21\nCapricorn - Dec 22-Jan 19\nAquarius - Jan 20-Feb 18\nPisces - Feb 19-March 20",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "send_lbp_info",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 460,
+          "y": 2830
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Learn more about and support the last 21 Lesbian bars in the US by visiting https://www.lesbianbarproject.com 🏳️‍🌈"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
